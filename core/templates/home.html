@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram User Data</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            padding: 15px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        #user-info {
+            border: 1px solid var(--tg-theme-hint-color, #dddddd);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to the Telegram Mini App</h1>
+    <div id="user-info">
+        <p>Loading user data...</p>
+    </div>
+
+    <script>
+        // Ensure the Telegram Web App script is loaded
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+
+            // Initialize the app
+            tg.ready();
+
+            // Get user data
+            const user = tg.initDataUnsafe.user;
+            const userInfoDiv = document.getElementById('user-info');
+
+            if (user) {
+                userInfoDiv.innerHTML = `
+                    <p><strong>First Name:</strong> ${user.first_name || 'N/A'}</p>
+                    <p><strong>Last Name:</strong> ${user.last_name || 'N/A'}</p>
+                    <p><strong>Username:</strong> ${user.username || 'N/A'}</p>
+                    <p><strong>Language Code:</strong> ${user.language_code || 'N/A'}</p>
+                `;
+            } else {
+                userInfoDiv.innerHTML = '<p>Could not retrieve user data.</p>';
+            }
+            
+            // Expand the Mini App to full height
+            tg.expand();
+
+            if (user) {
+                // Function to get CSRF token from cookies
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            // Does this cookie string begin with the name we want?
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                const csrftoken = getCookie('csrftoken');
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ user: user })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+        } else {
+            const userInfoDiv = document.getElementById('user-info');
+            userInfoDiv.innerHTML = '<p>This is not running inside a Telegram Mini App.</p>';
+        }
+    </script>
+
+</body>
+</html>
